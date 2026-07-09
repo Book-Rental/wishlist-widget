@@ -16,7 +16,7 @@ type Props = {
 };
 
 type ErrorResponse = {
-  message: string;
+    message: string;
 };
 
 const WishlistCreate = ({ userId }: Props) => {
@@ -57,11 +57,11 @@ const WishlistCreate = ({ userId }: Props) => {
     return (
         <>
             <Rb_Button
-  className="w-full md:w-auto h-11 px-6 whitespace-nowrap"
-  onClick={() => setIsOpen(true)}
->
-  + Create New Wishlist
-</Rb_Button>
+                className="w-full md:w-auto h-11 px-6 whitespace-nowrap"
+                onClick={() => setIsOpen(true)}
+            >
+                + Create New Wishlist
+            </Rb_Button>
 
             <Modal
                 isOpen={isOpen}

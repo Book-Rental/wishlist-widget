@@ -35,19 +35,19 @@ const WishlistList = ({
   });
 
   const options = useMemo(
-  () =>
-    data?.data?.map((item: Wishlist) => ({
-      label: item.name,
-      value: item._id,
-    })) ?? [],
-  [data]
-);
+    () =>
+      data?.data?.map((item: Wishlist) => ({
+        label: item.name,
+        value: item._id,
+      })) ?? [],
+    [data]
+  );
 
-useEffect(() => {
-  if (options.length > 0 && !selectedWishlist) {
-    onWishlistChange(options[0].value);
-  }
-}, [options, selectedWishlist, onWishlistChange]);
+  useEffect(() => {
+    if (options.length > 0 && !selectedWishlist) {
+      onWishlistChange(options[0].value);
+    }
+  }, [options, selectedWishlist, onWishlistChange]);
 
 
   useEffect(() => {
@@ -62,15 +62,15 @@ useEffect(() => {
     return <p>{error.message}</p>;
   }
   return (
-   <div className="w-full md:w-72">
-  <Dropdown
-    label="Wishlist"
-    placeholder="Select Wishlist"
-    options={options}
-    value={selectedWishlist}
-    onChange={onWishlistChange}
-  />
-</div>
+    <div className="w-full md:w-72">
+      <Dropdown
+        label="Wishlist"
+        placeholder="Select Wishlist"
+        options={options}
+        value={selectedWishlist}
+        onChange={onWishlistChange}
+      />
+    </div>
   );
 };
 

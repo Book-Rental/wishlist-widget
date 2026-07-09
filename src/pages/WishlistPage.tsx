@@ -12,21 +12,21 @@ const WishlistPage = ({ userId }: Props) => {
 
     return (
         <div className="max-w-7xl mx-auto p-6">
-           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-  {/* Dropdown */}
-  <div className="w-full md:w-72">
-    <WishlistList
-      userId={userId}
-      selectedWishlist={selectedWishlist}
-      onWishlistChange={setSelectedWishlist}
-    />
-  </div>
+            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                {/* Dropdown */}
+                <div className="w-full md:w-72">
+                    <WishlistList
+                        userId={userId}
+                        selectedWishlist={selectedWishlist}
+                        onWishlistChange={setSelectedWishlist}
+                    />
+                </div>
 
-  {/* Create Button */}
-  <div className="w-full md:w-auto">
-    <WishlistCreate userId={userId} />
-  </div>
-</div>
+                {/* Create Button */}
+                <div className="w-full md:w-auto">
+                    <WishlistCreate userId={userId} />
+                </div>
+            </div>
 
             <WishlistProducts userId={userId} selectedWishlist={selectedWishlist} />
         </div>

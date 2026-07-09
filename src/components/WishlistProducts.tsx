@@ -84,19 +84,19 @@ const WishlistProducts = ({ selectedWishlist, userId }: Props) => {
 
   const products: Book[] = data?.data?.books ?? [];
 
-   const redirectToPdp = (id:string) => {
+  const redirectToPdp = (id: string) => {
     window.history.pushState({}, '', `/books-details?bookId=${id}`)
     window.dispatchEvent(new PopStateEvent('popstate'));
   }
-  
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 justify-items-center gap-6">
         {products.map((product) => (
-  <div key={product._id} className="relative group w-full max-w-[280px]">
+          <div key={product._id} className="relative group w-full max-w-[280px]">
 
-<button
-  className="
+            <button
+              className="
     absolute top-5 right-3.5 z-10
     flex h-8 w-8 items-center justify-center
     rounded-full bg-white shadow-md
@@ -105,30 +105,30 @@ const WishlistProducts = ({ selectedWishlist, userId }: Props) => {
     group-hover:opacity-100 group-hover:pointer-events-auto
     hover:bg-gray-100
   "
-  onClick={() => {
-    setSelectedBookId(product._id);
-    setIsOpen(true);
-  }}
->
-  ✕
-</button>
+              onClick={() => {
+                setSelectedBookId(product._id);
+                setIsOpen(true);
+              }}
+            >
+              ✕
+            </button>
 
-  <ProductCard
-    imageUrl={product.coverImage}
-    title={product.name}
-    author="Unknown"
-    priceText={`₹${product.price}`}
-    rating={4.5}
-     onProductClick={() => redirectToPdp(product._id)}
-  >
-    <div className="mt-4 pb-1">
-      <Rb_Button className="w-full">
-        Add to Cart
-      </Rb_Button>
-    </div>
-  </ProductCard>
-</div>
-))}
+            <ProductCard
+              imageUrl={product.coverImage}
+              title={product.name}
+              author="Unknown"
+              priceText={`₹${product.price}`}
+              rating={4.5}
+              onProductClick={() => redirectToPdp(product._id)}
+            >
+              <div className="mt-4 pb-1">
+                <Rb_Button className="w-full">
+                  Add to Cart
+                </Rb_Button>
+              </div>
+            </ProductCard>
+          </div>
+        ))}
       </div>
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
@@ -150,7 +150,7 @@ const WishlistProducts = ({ selectedWishlist, userId }: Props) => {
             </Rb_Button>
 
             <Rb_Button
-            className="!bg-[#DC2626]"
+              className="!bg-[#DC2626]"
               onClick={() => deleteBook.mutate(selectedBookId)}
             >
               Remove
