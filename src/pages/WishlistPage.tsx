@@ -1,34 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WishlistCreate from "../components/WishlistCreate";
 import WishlistList from "../components/WishlistList";
 import WishlistProducts from "../components/WishlistProducts";
 
-type Props = {
-    userId: string;
-};
-
-const WishlistPage = ({ userId }: Props) => {
+const WishlistPage = () => {
     const [selectedWishlist, setSelectedWishlist] = useState("");
+const [wishlistLoading, setWishlistLoading] = useState(false);
+const [productsLoading, setProductsLoading] = useState(false);
 
+useEffect(() => {
+  window.dispatchEvent(
+    new CustomEvent("widget-loading-status", {
+      detail: wishlistLoading || productsLoading,
+    })
+  );
+}, [wishlistLoading, productsLoading]);
     return (
-        <div className="max-w-7xl mx-auto p-6">
+        <div className="mx-auto p-6">
             <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                {/* Dropdown */}
                 <div className="w-full md:w-72">
                     <WishlistList
-                        userId={userId}
                         selectedWishlist={selectedWishlist}
                         onWishlistChange={setSelectedWishlist}
+                         onLoadingChange={setWishlistLoading}
                     />
                 </div>
 
                 {/* Create Button */}
                 <div className="w-full md:w-auto">
-                    <WishlistCreate userId={userId} />
+                    <WishlistCreate/>
                 </div>
             </div>
 
-            <WishlistProducts userId={userId} selectedWishlist={selectedWishlist} />
+            <WishlistProducts selectedWishlist={selectedWishlist} onLoadingChange={setProductsLoading}/>
         </div>
     );
 };

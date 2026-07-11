@@ -11,18 +11,16 @@ import {
 import axios, { AxiosError } from "axios";
 import { toast, ToastContainer } from "react-toastify";
 
-type Props = {
-    userId: string;
-};
-
 type ErrorResponse = {
     message: string;
 };
 
-const WishlistCreate = ({ userId }: Props) => {
+const WishlistCreate = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [wishlistName, setWishlistName] = useState("");
     const queryClient = useQueryClient();
+    const userId =
+  window.HOST_USER_INFO?._id ?? "6a3bbe38827e96ec21dcb390";
     const { mutate, isPending } = useMutation({
         mutationFn: async (payload: { name: string; userId: string }) => {
             const { data } = await axios.post(
