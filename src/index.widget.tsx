@@ -10,11 +10,12 @@ declare global {
   interface Window {
     renderReactWidget: (config: string) => void;
     unmountReactWidget: (containerId: string) => void;
+    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+    HOST_USER_INFO: any;
   }
 }
 
 const roots: Record<string, Root> = {};
-
 window.renderReactWidget = (config: string) => {
   let options: WishlistWidgetOptions;
 
@@ -39,8 +40,7 @@ window.renderReactWidget = (config: string) => {
   const root = createRoot(container);
 
   root.render(
-        <App />
-
+        <App/>
   );
 
   roots[options.containerElementId] = root;
