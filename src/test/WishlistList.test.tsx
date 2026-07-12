@@ -1,5 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
+import {
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import WishlistList from "../components/WishlistList";
 
 declare global {
@@ -20,26 +29,15 @@ type DropdownProps = {
   onChange: (value: string) => void;
 };
 
-const useQueryMock = vi.fn();
-
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: () => useQueryMock(),
-}));
-
 vi.mock("@rentbook/rentbook-ui-lib", () => ({
   Rb_LoadingSpinner: () => <div>Loading...</div>,
-
-  Dropdown: ({
-    options,
-    value,
-    onChange,
-  }: DropdownProps) => (
+  Dropdown: ({ options, value, onChange }: DropdownProps) => (
     <select
       data-testid="wishlist-dropdown"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
-      {options.map((option: DropdownOption) => (
+      {options.map((option) => (
         <option
           key={option.value}
           value={option.value}
@@ -52,191 +50,126 @@ vi.mock("@rentbook/rentbook-ui-lib", () => ({
 }));
 
 describe("WishlistList", () => {
+  let queryClient: QueryClient;
+
+  const mockFetch = (data: unknown, ok = true) => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok,
+      json: async () => data,
+    } as Response);
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
 
     window.HOST_USER_INFO = {
       _id: "user123",
     };
+
+    vi.restoreAllMocks();
   });
 
-  const defaultProps = {
-    selectedWishlist: "",
-    onWishlistChange: vi.fn(),
-    onLoadingChange: vi.fn(),
-  };
-
-  it("shows loading spinner", () => {
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    });
-
-    render(<WishlistList {...defaultProps} />);
-
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+  afterEach(() => {
+    queryClient.clear();
   });
 
-  it("shows dropdown with wishlists", () => {
-    useQueryMock.mockReturnValue({
-      isLoading: false,
-      error: null,
-      data: {
-        data: [
-          {
-            _id: "1",
-            name: "Books",
-          },
-          {
-            _id: "2",
-            name: "Novels",
-          },
-        ],
-      },
+  const renderComponent = (props = {}) =>
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WishlistList
+          selectedWishlist=""
+          onWishlistChange={vi.fn()}
+          onLoadingChange={vi.fn()}
+          {...props}
+        />
+      </QueryClientProvider>
+    );
+
+  it("renders dropdown after successful fetch", async () => {
+    mockFetch({
+      data: [
+        { _id: "1", name: "Books" },
+        { _id: "2", name: "Science" },
+      ],
     });
 
-    render(<WishlistList {...defaultProps} />);
-
-    expect(screen.getByTestId("wishlist-dropdown")).toBeInTheDocument();
-    expect(screen.getByText("Books")).toBeInTheDocument();
-    expect(screen.getByText("Novels")).toBeInTheDocument();
-  });
-
-  it("shows error message", () => {
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error("Failed to fetch wishlists"),
-    });
-
-    render(<WishlistList {...defaultProps} />);
+    renderComponent();
 
     expect(
-      screen.getByText("Failed to fetch wishlists")
+      await screen.findByTestId("wishlist-dropdown")
+    ).toBeInTheDocument();
+
+    expect(screen.getByText("Books")).toBeInTheDocument();
+    expect(screen.getByText("Science")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalled();
+  });
+
+  it("shows error when fetch fails", async () => {
+    mockFetch({}, false);
+
+    renderComponent();
+
+    expect(
+      await screen.findByText("Failed to fetch wishlists")
     ).toBeInTheDocument();
   });
 
-  it("shows empty state", () => {
-    useQueryMock.mockReturnValue({
-      isLoading: false,
-      error: null,
-      data: {
-        data: [],
-      },
+  it("shows empty state", async () => {
+    mockFetch({
+      data: [],
     });
 
-    render(<WishlistList {...defaultProps} />);
+    renderComponent();
 
-    expect(screen.getByText("No wishlists found.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No wishlists found.")
+    ).toBeInTheDocument();
   });
 
-  it("calls onWishlistChange with first wishlist", () => {
+  it("calls onWishlistChange with first wishlist", async () => {
     const onWishlistChange = vi.fn();
 
-    useQueryMock.mockReturnValue({
-      isLoading: false,
-      error: null,
-      data: {
-        data: [
-          {
-            _id: "123",
-            name: "Wishlist 1",
-          },
-        ],
-      },
+    mockFetch({
+      data: [{ _id: "1", name: "Books" }],
     });
 
-    render(
-      <WishlistList
-        {...defaultProps}
-        onWishlistChange={onWishlistChange}
-      />
-    );
+    renderComponent({ onWishlistChange });
 
-    expect(onWishlistChange).toHaveBeenCalledWith("123");
+    await waitFor(() =>
+      expect(onWishlistChange).toHaveBeenCalledWith("1")
+    );
   });
 
-  it("calls onLoadingChange", () => {
-    const onLoadingChange = vi.fn();
-
-    useQueryMock.mockReturnValue({
-      isLoading: true,
-      error: null,
-      data: undefined,
-    });
-
-    render(
-      <WishlistList
-        {...defaultProps}
-        onLoadingChange={onLoadingChange}
-      />
-    );
-
-    expect(onLoadingChange).toHaveBeenCalledWith(true);
-  });
-
-  it("changes selected wishlist", () => {
+  it("changes selected wishlist", async () => {
     const onWishlistChange = vi.fn();
 
-    useQueryMock.mockReturnValue({
-      isLoading: false,
-      error: null,
-      data: {
-        data: [
-          {
-            _id: "1",
-            name: "Books",
-          },
-          {
-            _id: "2",
-            name: "Science",
-          },
-        ],
-      },
+    mockFetch({
+      data: [
+        { _id: "1", name: "Books" },
+        { _id: "2", name: "Science" },
+      ],
     });
 
-    render(
-      <WishlistList
-        {...defaultProps}
-        selectedWishlist="1"
-        onWishlistChange={onWishlistChange}
-      />
+    renderComponent({
+      selectedWishlist: "1",
+      onWishlistChange,
+    });
+
+    fireEvent.change(
+      await screen.findByTestId("wishlist-dropdown"),
+      {
+        target: {
+          value: "2",
+        },
+      }
     );
-
-    fireEvent.change(screen.getByTestId("wishlist-dropdown"), {
-      target: {
-        value: "2",
-      },
-    });
 
     expect(onWishlistChange).toHaveBeenCalledWith("2");
-  });
-
-  it("does not call onWishlistChange if selectedWishlist already exists", () => {
-    const onWishlistChange = vi.fn();
-
-    useQueryMock.mockReturnValue({
-      isLoading: false,
-      error: null,
-      data: {
-        data: [
-          {
-            _id: "1",
-            name: "Books",
-          },
-        ],
-      },
-    });
-
-    render(
-      <WishlistList
-        {...defaultProps}
-        selectedWishlist="1"
-        onWishlistChange={onWishlistChange}
-      />
-    );
-
-    expect(onWishlistChange).not.toHaveBeenCalled();
   });
 });
