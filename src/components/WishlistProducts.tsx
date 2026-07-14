@@ -108,6 +108,7 @@ const WishlistProducts = ({
         queryClient.invalidateQueries({
           queryKey: ["wishlistProducts", selectedWishlist],
         });
+        window.dispatchEvent(new CustomEvent("wishlist-refresh"));
         setIsModalOpen(false);
         setSelectedBookId("");
       }
