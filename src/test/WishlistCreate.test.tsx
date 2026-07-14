@@ -9,7 +9,6 @@ import type {
 
 import WishlistCreate from "../components/WishlistCreate";
 import axios from "axios";
-import { toast } from "react-toastify";
 
 declare global {
   interface Window {
@@ -51,13 +50,7 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
-vi.mock("react-toastify", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-  ToastContainer: () => <div>ToastContainer</div>,
-}));
+const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
 
 type ChildrenProps = {
   children: ReactNode;
@@ -109,14 +102,14 @@ vi.mock("@rentbook/rentbook-ui-lib", () => ({
 }));
 
 describe("WishlistCreate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+ beforeEach(() => {
+  vi.clearAllMocks();
+  dispatchEventSpy.mockClear();
 
-    window.HOST_USER_INFO = {
-      _id: "user123",
-    };
-  });
-
+  window.HOST_USER_INFO = {
+    _id: "user123",
+  };
+});
   it("renders create button", () => {
     render(<WishlistCreate />);
 
@@ -270,9 +263,15 @@ describe("WishlistCreate", () => {
       })
     );
 
-    expect(toast.success).toHaveBeenCalledWith(
-      "Wishlist created successfully!"
-    );
+    expect(dispatchEventSpy).toHaveBeenCalled();
+
+const event = dispatchEventSpy.mock.calls[0][0] as CustomEvent;
+
+expect(event.type).toBe("app-toast-notification");
+expect(event.detail).toEqual({
+  message: "Wishlist created successfully!",
+  type: "success",
+});
 
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["wishlistNames", "user123"],
@@ -311,7 +310,15 @@ describe("WishlistCreate", () => {
       })
     );
 
-    expect(toast.error).toHaveBeenCalledWith("Already exists");
+   expect(dispatchEventSpy).toHaveBeenCalled();
+
+const event = dispatchEventSpy.mock.calls[0][0] as CustomEvent;
+
+expect(event.type).toBe("app-toast-notification");
+expect(event.detail).toEqual({
+  message: "Already exists",
+  type: "error",
+});
   });
 
   it("shows default error toast when error message is missing", async () => {
@@ -341,7 +348,15 @@ describe("WishlistCreate", () => {
     );
 
     await vi.waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Something went wrong.");
-    });
+  expect(dispatchEventSpy).toHaveBeenCalled();
+});
+
+const event = dispatchEventSpy.mock.calls[0][0] as CustomEvent;
+
+expect(event.type).toBe("app-toast-notification");
+expect(event.detail).toEqual({
+  message: "Something went wrong.",
+  type: "error",
+});
   });
 });

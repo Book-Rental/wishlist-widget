@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1783831542623" clover="3.2.0">
-  <project timestamp="1783831542623" name="All files">
-    <metrics statements="42" coveredstatements="42" conditionals="26" coveredconditionals="23" methods="15" coveredmethods="15" elements="83" coveredelements="80" complexity="0" loc="42" ncloc="42" packages="1" files="2" classes="2"/>
+<coverage generated="1784009040354" clover="3.2.0">
+  <project timestamp="1784009040355" name="All files">
+    <metrics statements="42" coveredstatements="42" conditionals="26" coveredconditionals="23" methods="16" coveredmethods="16" elements="84" coveredelements="81" complexity="0" loc="42" ncloc="42" packages="1" files="2" classes="2"/>
     <file name="WishlistCreate.tsx" path="D:\wishlist-widget\wishlist-widget\src\components\WishlistCreate.tsx">
-      <metrics statements="22" coveredstatements="22" conditionals="8" coveredconditionals="6" methods="9" coveredmethods="9"/>
-      <line num="18" count="1" type="stmt"/>
+      <metrics statements="22" coveredstatements="22" conditionals="8" coveredconditionals="6" methods="10" coveredmethods="10"/>
+      <line num="16" count="1" type="stmt"/>
+      <line num="17" count="57" type="stmt"/>
+      <line num="18" count="57" type="stmt"/>
       <line num="19" count="57" type="stmt"/>
-      <line num="20" count="57" type="stmt"/>
-      <line num="21" count="57" type="stmt"/>
-      <line num="23" count="57" type="cond" truecount="1" falsecount="1"/>
-      <line num="24" count="57" type="stmt"/>
+      <line num="21" count="57" type="cond" truecount="1" falsecount="1"/>
+      <line num="22" count="57" type="stmt"/>
       <line num="26" count="4" type="stmt"/>
-      <line num="30" count="2" type="stmt"/>
-      <line num="33" count="1" type="stmt"/>
-      <line num="34" count="1" type="stmt"/>
-      <line num="35" count="1" type="stmt"/>
-      <line num="36" count="1" type="stmt"/>
-      <line num="39" count="1" type="stmt"/>
-      <line num="43" count="3" type="cond" truecount="2" falsecount="0"/>
-      <line num="44" count="3" type="stmt"/>
-      <line num="48" count="57" type="stmt"/>
-      <line num="49" count="4" type="stmt"/>
-      <line num="55" count="57" type="stmt"/>
-      <line num="59" count="9" type="stmt"/>
-      <line num="66" count="1" type="stmt"/>
-      <line num="68" count="1" type="stmt"/>
-      <line num="78" count="35" type="stmt"/>
+      <line num="32" count="57" type="stmt"/>
+      <line num="34" count="4" type="stmt"/>
+      <line num="38" count="2" type="stmt"/>
+      <line num="41" count="1" type="stmt"/>
+      <line num="42" count="1" type="stmt"/>
+      <line num="43" count="1" type="stmt"/>
+      <line num="46" count="1" type="stmt"/>
+      <line num="49" count="3" type="stmt"/>
+      <line num="56" count="57" type="stmt"/>
+      <line num="57" count="4" type="stmt"/>
+      <line num="63" count="57" type="stmt"/>
+      <line num="67" count="9" type="stmt"/>
+      <line num="74" count="1" type="stmt"/>
+      <line num="76" count="1" type="stmt"/>
+      <line num="86" count="35" type="stmt"/>
     </file>
     <file name="WishlistList.tsx" path="D:\wishlist-widget\wishlist-widget\src\components\WishlistList.tsx">
       <metrics statements="20" coveredstatements="20" conditionals="18" coveredconditionals="17" methods="6" coveredmethods="6"/>
