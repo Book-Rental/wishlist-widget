@@ -9,8 +9,6 @@ import {
     Rb_Label,
 } from "@rentbook/rentbook-ui-lib";
 import axios, { AxiosError } from "axios";
-import { toast, ToastContainer } from "react-toastify";
-
 type ErrorResponse = {
     message: string;
 };
@@ -20,7 +18,17 @@ const WishlistCreate = () => {
     const [wishlistName, setWishlistName] = useState("");
     const queryClient = useQueryClient();
     const userId =
-  window.HOST_USER_INFO?._id ?? "6a3bbe38827e96ec21dcb390";
+        window.HOST_USER_INFO?._id ?? "6a3bbe38827e96ec21dcb390";
+    const showNotification = (
+        message: string,
+        type: "success" | "error" | "warning" | "info"
+    ) => {
+        window.dispatchEvent(
+            new CustomEvent("app-toast-notification", {
+                detail: { message, type },
+            })
+        );
+    };
     const { mutate, isPending } = useMutation({
         mutationFn: async (payload: { name: string; userId: string }) => {
             const { data } = await axios.post(
@@ -29,19 +37,19 @@ const WishlistCreate = () => {
             );
             return data;
         },
-        onSuccess: (data) => {
-            console.log("Success:", data);
+        onSuccess: () => {
             setIsOpen(false);
             setWishlistName("");
             queryClient.invalidateQueries({
                 queryKey: ["wishlistNames", userId],
             });
-            toast.success("Wishlist created successfully!");
+            showNotification("Wishlist created successfully!", "success");
         },
         onError: (error: AxiosError<ErrorResponse>) => {
-            const message =
-                error.response?.data?.message || "Something went wrong.";
-            toast.error(message);
+            showNotification(
+                error.response?.data?.message || "Something went wrong.",
+                "error"
+            );
         },
     });
 
@@ -86,7 +94,7 @@ const WishlistCreate = () => {
                     </Rb_Button>
                 </div>
             </Modal>
-            <ToastContainer
+            {/* <ToastContainer
                 position="bottom-center"
                 autoClose={2000}
                 hideProgressBar={true}
@@ -94,7 +102,7 @@ const WishlistCreate = () => {
                 closeOnClick
                 pauseOnHover
                 theme="light"
-            />
+            /> */}
         </>
     );
 };

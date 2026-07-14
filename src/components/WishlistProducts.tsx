@@ -70,6 +70,17 @@ const WishlistProducts = ({
     onLoadingChange(isPending);
   }, [isPending, onLoadingChange]);
 
+  const showNotification = (
+    message: string,
+    type: "success" | "error"
+  ) => {
+    window.dispatchEvent(
+      new CustomEvent("app-toast-notification", {
+        detail: { message, type },
+      })
+    );
+  };
+
   const deleteBook = useMutation({
     mutationFn: async (bookId: string) => {
       const response = await fetch(
@@ -92,13 +103,23 @@ const WishlistProducts = ({
       return response.json();
     },
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["wishlistProducts", selectedWishlist],
-      });
+    onSuccess: (data) => {
+      if (data.status === "Success") {
+        queryClient.invalidateQueries({
+          queryKey: ["wishlistProducts", selectedWishlist],
+        });
+        setIsModalOpen(false);
+        setSelectedBookId("");
+      }
 
-      setIsModalOpen(false);
-      setSelectedBookId("");
+      showNotification(
+        data.message,
+        data.status === "Success" ? "success" : "error"
+      );
+    },
+
+    onError: () => {
+      showNotification("Something went wrong.", "error");
     },
   });
 
@@ -109,6 +130,11 @@ const WishlistProducts = ({
     window.history.pushState({}, "", `/books-details?bookId=${bookId}`);
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
+
+  const navigateToCategorys = () => {
+    window.history.pushState({}, "", `/books`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
 
   const openDeleteModal = (bookId: string) => {
     setSelectedBookId(bookId);
@@ -149,6 +175,7 @@ const WishlistProducts = ({
             <p className="mt-2 text-gray-500">
               Start adding books to your wishlist.
             </p>
+            <Rb_Button onClick={navigateToCategorys} className="mt-4">+ Add Books</Rb_Button>
           </div>
         </div>
       ) : (
@@ -161,7 +188,8 @@ const WishlistProducts = ({
               >
                 <div className="group relative inline-block">
                   <button
-                    className="absolute top-5 right-1 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200 opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100 hover:bg-red-500 hover:text-white"
+                    className={`absolute top-5 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200
+    ${isModalOpen ? "hidden" : "opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100 hover:bg-red-500 hover:text-white"}`}
                     onClick={() => openDeleteModal(product._id)}
                   >
                     ✕
@@ -176,6 +204,7 @@ const WishlistProducts = ({
                     onProductClick={() =>
                       redirectToPdp(product._id)
                     }
+                    className="w-[260px]"
                   >
                     <div className="mt-4 px-2 pb-2">
                       <Rb_Button className="w-full rounded-lg">
