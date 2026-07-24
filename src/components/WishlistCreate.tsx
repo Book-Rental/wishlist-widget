@@ -33,7 +33,11 @@ const WishlistCreate = () => {
         mutationFn: async (payload: { name: string; userId: string }) => {
             const { data } = await axios.post(
                 `${import.meta.env.VITE_API_URL}/api/wishList/group`,
-                payload
+                payload,
+                {
+                    withCredentials: true,
+                }
+
             );
             return data;
         },

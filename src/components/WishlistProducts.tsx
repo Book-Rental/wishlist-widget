@@ -46,7 +46,11 @@ const WishlistProducts = ({
   }, [selectedWishlist]);
   const fetchWishlistProducts = async () => {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/wishList/${userId}?wishListID=${selectedWishlist}&page=${currentPage}`
+      `${import.meta.env.VITE_API_URL}/api/wishList/${userId}?wishListID=${selectedWishlist}&page=${currentPage}`,
+       {
+      method: "GET",
+      credentials: "include",
+    }
     );
 
     if (!response.ok) {
@@ -93,6 +97,7 @@ const WishlistProducts = ({
           body: JSON.stringify({
             wishlistId: selectedWishlist,
           }),
+          credentials: "include"
         }
       );
 

@@ -23,7 +23,11 @@ const WishlistList = ({
 
   const fetchWishlists = async (userId: string) => {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL}/api/wishList/wishlistName/${userId}`
+      `${import.meta.env.VITE_API_URL}/api/wishList/wishlistName/${userId}`,
+       {
+      method: "GET",
+      credentials: "include",
+    }
     );
 
     if (!response.ok) {
