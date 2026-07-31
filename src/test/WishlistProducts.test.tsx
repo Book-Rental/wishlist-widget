@@ -5,10 +5,29 @@ import WishlistProducts from "../components/WishlistProducts";
 import userEvent from "@testing-library/user-event";
 import { addToCart } from "../services/cartService";
 
+
 const mockedAddToCart = vi.mocked(addToCart);
 
+interface MockAddToCartModalProps {
+  isOpen: boolean;
+  onProceed: (data: {
+    bookId: string;
+    rentalPeriod: string;
+    quantity: number;
+  }) => Promise<void> | void;
+  onClose: () => void;
+  product: {
+    _id: string;
+  };
+}
+
 vi.mock("../components/AddToCartModal", () => ({
-  default: ({ isOpen, onProceed, onClose, product }: any) =>
+  default: ({
+    isOpen,
+    onProceed,
+    onClose,
+    product,
+  }: MockAddToCartModalProps) =>
     isOpen ? (
       <button
         onClick={async () => {
