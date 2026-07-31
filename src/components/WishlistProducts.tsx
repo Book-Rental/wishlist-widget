@@ -1,18 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  Modal,
-  ModalHeader,
-  Pagination,
-  ProductCard,
-  Rb_Button,
-  Rb_LoadingSpinner,
-} from "@rentbook/rentbook-ui-lib";
+import { useMutation, useQuery, useQueryClient, } from "@tanstack/react-query";
+import { Modal, ModalHeader, Pagination, ProductCard, Rb_Button, Rb_LoadingSpinner, } from "@rentbook/rentbook-ui-lib";
 import { LibraryBig } from "lucide-react";
+import AddToCartModal from "./AddToCartModal";
+import { addToCart } from "../services/cartService";
+import { AddToCartPayload } from "../types/cart";
 
 type Props = {
   selectedWishlist: string;
@@ -26,6 +18,9 @@ type Book = {
   description: string;
   price: number;
   coverImage: string;
+  rentalPricePerDay: number;
+  rentalPricePerWeek: number;
+  rentalPricePerMonth: number;
 };
 
 const userId =
@@ -40,6 +35,10 @@ const WishlistProducts = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedBookId, setSelectedBookId] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isAddToCartModalOpen, setIsAddToCartModalOpen] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
+  const [addedBookIds, setAddedBookIds] = useState<string[]>([]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -129,6 +128,27 @@ const WishlistProducts = ({
     },
   });
 
+  const handleAddToCart = async ( payload: AddToCartPayload) => {
+    setIsAddingToCart(payload.bookId);
+    try {
+      await addToCart(payload);
+      setAddedBookIds((prev) => [...prev, payload.bookId]);
+      showNotification(
+        "Book added to rental cart.",
+        "success"
+      );
+    } catch (error) {
+      showNotification(
+        error instanceof Error
+          ? error.message
+          : "Failed to add book to cart.",
+        "error"
+      );
+    } finally {
+      setIsAddingToCart(null);
+    }
+  };
+
   const products: Book[] = data?.data?.books ?? [];
   const meta = data?.data?.meta;
 
@@ -195,7 +215,7 @@ const WishlistProducts = ({
                 <div className="group relative inline-block">
                   <button
                     className={`absolute top-5 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200
-    ${isModalOpen ? "hidden" : "opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100 hover:bg-red-500 hover:text-white"}`}
+                    ${isModalOpen ? "hidden" : "opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100 hover:bg-red-500 hover:text-white"}`}
                     onClick={() => openDeleteModal(product._id)}
                   >
                     ✕
@@ -213,8 +233,19 @@ const WishlistProducts = ({
                     className="w-[260px]"
                   >
                     <div className="mt-4 px-2 pb-2">
-                      <Rb_Button className="w-full rounded-lg">
-                        Add to Cart
+                      <Rb_Button
+                        className="w-full rounded-lg"
+                        disabled={isAddingToCart === product._id}
+                        onClick={() => {
+                          setSelectedBook(product);
+                          setIsAddToCartModalOpen(true);
+                        }}
+                      >
+                        {isAddingToCart === product._id
+                          ? "Adding..."
+                          : addedBookIds.includes(product._id)
+                          ? "Move to Cart"
+                          : "Add to Cart"}
                       </Rb_Button>
                     </div>
                   </ProductCard>
@@ -233,6 +264,15 @@ const WishlistProducts = ({
             </div>
           )}
         </>
+      )}
+
+      {selectedBook && (
+        <AddToCartModal
+          isOpen={isAddToCartModalOpen}
+          onClose={() => setIsAddToCartModalOpen(false)}
+          product={selectedBook}
+          onProceed={handleAddToCart}
+        />
       )}
 
       <Modal

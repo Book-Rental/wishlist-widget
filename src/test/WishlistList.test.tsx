@@ -120,16 +120,18 @@ describe("WishlistList", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows empty state", async () => {
+  it("renders nothing when no wishlists are returned", async () => {
     mockFetch({
       data: [],
     });
-
-    renderComponent();
-
+    const { container } = renderComponent();
+    await waitFor(() => {
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    });
     expect(
-      await screen.findByText("No wishlists found.")
-    ).toBeInTheDocument();
+      screen.queryByTestId("wishlist-dropdown")
+    ).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 
   it("calls onWishlistChange with first wishlist", async () => {

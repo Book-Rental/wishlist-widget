@@ -12,7 +12,7 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@rentbook/rentbook-ui-lib": "^0.0.2",
+    "@rentbook/rentbook-ui-lib": "^0.0.3",
     "@tanstack/react-query": "^5.101.2",
     "axios": "^1.18.1",
     "lucide-react": "^1.24.0",
