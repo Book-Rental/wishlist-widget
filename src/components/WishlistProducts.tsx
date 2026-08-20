@@ -24,7 +24,7 @@ type Book = {
 };
 
 const userId =
-  window.HOST_USER_INFO?._id ?? "6a3bbe38827e96ec21dcb390";
+  window.HOST_USER_INFO?._id ?? "";
 
 const WishlistProducts = ({
   selectedWishlist,
@@ -38,7 +38,35 @@ const WishlistProducts = ({
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isAddToCartModalOpen, setIsAddToCartModalOpen] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
-  const [addedBookIds, setAddedBookIds] = useState<string[]>([]);
+  // const [addedBookIds, setAddedBookIds] = useState<string[]>([]);
+  const [cartItems, setCartItems] = useState<string[]>(window.HOST_CART ?? []);
+  const redirectToCart = () => {
+    window.history.pushState({}, "", "/cart");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+
+  const handleCartClick = (product: Book) => {
+    if (isAddingToCart === product._id) {
+      return;
+    }
+
+    if (cartItems.includes(product._id)) {
+      redirectToCart();
+      return;
+    }
+
+    setSelectedBook(product);
+    setIsAddToCartModalOpen(true);
+  };
+
+  useEffect(() => {
+    const handleCartStateChanged = (event: Event) => {
+      const customEvent = event as CustomEvent<string[]>;
+      setCartItems(customEvent.detail ?? []);
+    };
+    window.addEventListener("cart-state-changed", handleCartStateChanged);
+    return () => window.removeEventListener("cart-state-changed", handleCartStateChanged);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -132,7 +160,11 @@ const WishlistProducts = ({
     setIsAddingToCart(payload.bookId);
     try {
       await addToCart(payload);
-      setAddedBookIds((prev) => [...prev, payload.bookId]);
+      // setAddedBookIds((prev) => [...prev, payload.bookId]);
+      const updatedCart = [...(window.HOST_CART ?? []), payload.bookId];
+      window.HOST_CART = updatedCart;
+      setCartItems(updatedCart);
+      window.dispatchEvent(new CustomEvent("cart-state-changed", { detail: updatedCart }));
       showNotification(
         "Book added to rental cart.",
         "success"
@@ -206,17 +238,24 @@ const WishlistProducts = ({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((product) => (
               <div
                 key={product._id}
                 className="flex justify-center"
               >
-                <div className="group relative inline-block">
+                <div className="group relative w-full max-w-[260px]">
                   <button
-                    className={`absolute top-5 right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200
-                    ${isModalOpen ? "hidden" : "opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100 hover:bg-red-500 hover:text-white"}`}
-                    onClick={() => openDeleteModal(product._id)}
+                    type="button"
+                    className={`absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-600 shadow-lg transition-all duration-200 hover:bg-red-500 hover:text-white ${
+                      isModalOpen
+                        ? "hidden"
+                        : "opacity-100 scale-100 sm:opacity-0 sm:scale-90 sm:group-hover:opacity-100 sm:group-hover:scale-100"
+                    }`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openDeleteModal(product._id);
+                    }}
                   >
                     ✕
                   </button>
@@ -227,25 +266,21 @@ const WishlistProducts = ({
                     author={product.author}
                     priceText={`₹${product.price}`}
                     rating={4.5}
-                    onProductClick={() =>
-                      redirectToPdp(product._id)
-                    }
-                    className="w-[260px]"
+                    onProductClick={() => redirectToPdp(product._id)}
+                    cardWidth="100%"
+                    className="w-full"
                   >
                     <div className="mt-4 px-2 pb-2">
                       <Rb_Button
                         className="w-full rounded-lg"
                         disabled={isAddingToCart === product._id}
-                        onClick={() => {
-                          setSelectedBook(product);
-                          setIsAddToCartModalOpen(true);
-                        }}
+                        onClick={() => handleCartClick(product)}
                       >
                         {isAddingToCart === product._id
                           ? "Adding..."
-                          : addedBookIds.includes(product._id)
-                          ? "Move to Cart"
-                          : "Add to Cart"}
+                           :  cartItems.includes(product._id)
+                            ? "View Cart"
+                            : "Move to Cart"}
                       </Rb_Button>
                     </div>
                   </ProductCard>
@@ -255,7 +290,7 @@ const WishlistProducts = ({
           </div>
 
           {meta?.totalPages > 1 && (
-            <div className="mt-10 flex justify-end border-t pt-6">
+            <div className="mt-10 flex justify-center">
               <Pagination
                 currentPage={meta.currentPage}
                 totalPages={meta.totalPages}

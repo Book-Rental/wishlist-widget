@@ -21,8 +21,7 @@ const WishlistList = ({
   onWishlistChange,
   onLoadingChange,
 }: Props) => {
-  const userId =
-    window.HOST_USER_INFO?._id ?? "6a3bbe38827e96ec21dcb390";
+  const userId = window.HOST_USER_INFO?._id ?? "";
 
   const fetchWishlists = async (userId: string) => {
     const response = await fetch(
