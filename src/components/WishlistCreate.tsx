@@ -18,7 +18,7 @@ const WishlistCreate = () => {
     const [wishlistName, setWishlistName] = useState("");
     const queryClient = useQueryClient();
     const userId =
-        window.HOST_USER_INFO?._id ?? "6a3bbe38827e96ec21dcb390";
+        window.HOST_USER_INFO?._id ?? "";
     const showNotification = (
         message: string,
         type: "success" | "error" | "warning" | "info"
