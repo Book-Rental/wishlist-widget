@@ -9,12 +9,13 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+
 import WishlistList from "../components/WishlistList";
 
 declare global {
   interface Window {
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    HOST_USER_INFO: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    HOST_USER_INFO: any;
   }
 }
 
@@ -31,6 +32,7 @@ type DropdownProps = {
 
 vi.mock("@rentbook/rentbook-ui-lib", () => ({
   Rb_LoadingSpinner: () => <div>Loading...</div>,
+
   Dropdown: ({ options, value, onChange }: DropdownProps) => (
     <select
       data-testid="wishlist-dropdown"
@@ -38,10 +40,7 @@ vi.mock("@rentbook/rentbook-ui-lib", () => ({
       onChange={(e) => onChange(e.target.value)}
     >
       {options.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-        >
+        <option key={option.value} value={option.value}>
           {option.label}
         </option>
       ))}
@@ -60,6 +59,8 @@ describe("WishlistList", () => {
   };
 
   beforeEach(() => {
+    vi.restoreAllMocks();
+
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -71,25 +72,95 @@ describe("WishlistList", () => {
     window.HOST_USER_INFO = {
       _id: "user123",
     };
-
-    vi.restoreAllMocks();
   });
 
   afterEach(() => {
     queryClient.clear();
   });
 
-  const renderComponent = (props = {}) =>
-    render(
+  const renderComponent = (
+    props: Partial<React.ComponentProps<typeof WishlistList>> = {}
+  ) => {
+    const defaultProps = {
+      selectedWishlist: "",
+      onWishlistChange: vi.fn(),
+      onLoadingChange: vi.fn(),
+    };
+
+    return render(
       <QueryClientProvider client={queryClient}>
-        <WishlistList
-          selectedWishlist=""
-          onWishlistChange={vi.fn()}
-          onLoadingChange={vi.fn()}
-          {...props}
-        />
+        <WishlistList {...defaultProps} {...props} />
       </QueryClientProvider>
     );
+  };
+
+  it("shows loading spinner while fetching wishlists", async () => {
+    let resolveFetch: (value: Response) => void;
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    renderComponent();
+
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+
+    resolveFetch!({
+      ok: true,
+      json: async () => ({
+        data: [{ _id: "1", name: "Books" }],
+      }),
+    } as Response);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Loading...")
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("calls onLoadingChange with true while loading", async () => {
+    const onLoadingChange = vi.fn();
+
+    let resolveFetch: (value: Response) => void;
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    renderComponent({ onLoadingChange });
+
+    await waitFor(() => {
+      expect(onLoadingChange).toHaveBeenCalledWith(true);
+    });
+
+    resolveFetch!({
+      ok: true,
+      json: async () => ({
+        data: [],
+      }),
+    } as Response);
+  });
+
+  it("calls onLoadingChange with false after loading completes", async () => {
+    const onLoadingChange = vi.fn();
+
+    mockFetch({
+      data: [{ _id: "1", name: "Books" }],
+    });
+
+    renderComponent({ onLoadingChange });
+
+    await waitFor(() => {
+      expect(onLoadingChange).toHaveBeenCalledWith(false);
+    });
+  });
 
   it("renders dropdown after successful fetch", async () => {
     mockFetch({
@@ -107,7 +178,24 @@ describe("WishlistList", () => {
 
     expect(screen.getByText("Books")).toBeInTheDocument();
     expect(screen.getByText("Science")).toBeInTheDocument();
-    expect(fetch).toHaveBeenCalled();
+  });
+
+  it("calls fetch with correct URL and options", async () => {
+    mockFetch({
+      data: [{ _id: "1", name: "Books" }],
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        `${import.meta.env.VITE_API_URL}/api/wishList/wishlistName/user123`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+    });
   });
 
   it("shows error when fetch fails", async () => {
@@ -124,31 +212,62 @@ describe("WishlistList", () => {
     mockFetch({
       data: [],
     });
+
     const { container } = renderComponent();
+
     await waitFor(() => {
-      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Loading...")
+      ).not.toBeInTheDocument();
     });
+
     expect(
       screen.queryByTestId("wishlist-dropdown")
     ).not.toBeInTheDocument();
+
     expect(container.firstChild).toBeNull();
   });
 
-  it("calls onWishlistChange with first wishlist", async () => {
+  it("automatically selects the first wishlist when no wishlist is selected", async () => {
     const onWishlistChange = vi.fn();
 
     mockFetch({
-      data: [{ _id: "1", name: "Books" }],
+      data: [
+        { _id: "1", name: "Books" },
+        { _id: "2", name: "Science" },
+      ],
     });
 
-    renderComponent({ onWishlistChange });
+    renderComponent({
+      onWishlistChange,
+    });
 
-    await waitFor(() =>
-      expect(onWishlistChange).toHaveBeenCalledWith("1")
-    );
+    await waitFor(() => {
+      expect(onWishlistChange).toHaveBeenCalledWith("1");
+    });
   });
 
-  it("changes selected wishlist", async () => {
+  it("does not automatically change wishlist when one is already selected", async () => {
+    const onWishlistChange = vi.fn();
+
+    mockFetch({
+      data: [
+        { _id: "1", name: "Books" },
+        { _id: "2", name: "Science" },
+      ],
+    });
+
+    renderComponent({
+      selectedWishlist: "2",
+      onWishlistChange,
+    });
+
+    await screen.findByTestId("wishlist-dropdown");
+
+    expect(onWishlistChange).not.toHaveBeenCalled();
+  });
+
+  it("changes selected wishlist when dropdown value changes", async () => {
     const onWishlistChange = vi.fn();
 
     mockFetch({
@@ -173,5 +292,25 @@ describe("WishlistList", () => {
     );
 
     expect(onWishlistChange).toHaveBeenCalledWith("2");
+  });
+
+  it("uses empty userId when HOST_USER_INFO is unavailable", async () => {
+    window.HOST_USER_INFO = undefined;
+
+    mockFetch({
+      data: [{ _id: "1", name: "Books" }],
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        `${import.meta.env.VITE_API_URL}/api/wishList/wishlistName/`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+    });
   });
 });
