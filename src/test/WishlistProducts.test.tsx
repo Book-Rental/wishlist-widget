@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render,screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import WishlistProducts from "../components/WishlistProducts";
@@ -7,6 +7,14 @@ import { addToCart } from "../services/cartService";
 
 
 const mockedAddToCart = vi.mocked(addToCart);
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    HOST_USER_INFO: any;
+    HOST_CART: string[];
+  }
+}
 
 interface MockAddToCartModalProps {
   isOpen: boolean;
@@ -20,6 +28,7 @@ interface MockAddToCartModalProps {
     _id: string;
   };
 }
+
 
 vi.mock("../components/AddToCartModal", () => ({
   default: ({
@@ -107,21 +116,36 @@ vi.mock("@rentbook/rentbook-ui-lib", () => ({
     ),
 }));
 
+const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
+
+const getDispatchedEvent = (
+  eventType: string
+): CustomEvent | undefined => {
+  const events = dispatchEventSpy.mock.calls.map(
+    ([event]: [Event]) => event
+  );
+
+  return events.find(
+    (event: Event) => event.type === eventType
+  ) as CustomEvent | undefined;
+};
+
 describe("WishlistProducts", () => {
   const pushStateSpy = vi.spyOn(window.history, "pushState");
   const dispatchEventSpy = vi.spyOn(window, "dispatchEvent");
   beforeEach(() => {
+    vi.clearAllMocks();
+    window.HOST_USER_INFO = {
+      _id: "user123",
+    };
+    window.HOST_CART = [];
+    globalThis.fetch = vi.fn();
     pushStateSpy.mockClear();
     dispatchEventSpy.mockClear();
-    vi.clearAllMocks();
+  });
 
-    Object.defineProperty(window, "HOST_USER_INFO", {
-      writable: true,
-      value: {
-        _id: "user1",
-      },
-    });
-    globalThis.fetch = vi.fn();
+  afterEach(() => {
+    window.HOST_CART = [];
   });
 
   const createWrapper = () => {
@@ -216,7 +240,7 @@ describe("WishlistProducts", () => {
     expect(screen.getByText("JK Rowling")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Add to Cart",
+        name: "Move to Cart"
       })
     ).toBeInTheDocument();
   });
@@ -290,7 +314,7 @@ describe("WishlistProducts", () => {
     await screen.findByText("Harry Potter");
     await user.click(
         screen.getByRole("button", {
-        name: "Add to Cart",
+        name: "Move to Cart"
         })
     );
     expect(
@@ -685,11 +709,9 @@ describe("WishlistProducts", () => {
     );
 
     await waitFor(() => {
-        expect(dispatchEventSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-            type: "app-toast-notification",
-        })
-        );
+      expect(
+        getDispatchedEvent("app-toast-notification")
+      ).toBeDefined();
     });
   });
 
@@ -723,7 +745,7 @@ describe("WishlistProducts", () => {
     await screen.findByText("Book");
     await user.click(
         screen.getByRole("button", {
-        name: "Add to Cart",
+          name: "Move to Cart"
         })
     );
     await user.click(
@@ -778,7 +800,7 @@ describe("WishlistProducts", () => {
 
     await user.click(
         screen.getByRole("button", {
-        name: "Add to Cart",
+        name: "Move to Cart"
         })
     );
 
@@ -789,11 +811,9 @@ describe("WishlistProducts", () => {
     );
 
     await waitFor(() => {
-        expect(dispatchEventSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-            type: "app-toast-notification",
-        })
-        );
+      expect(
+        getDispatchedEvent("app-toast-notification")
+      ).toBeDefined();
     });
   });
 
@@ -842,7 +862,7 @@ describe("WishlistProducts", () => {
     renderComponent();
     await screen.findByText("Book");
     await user.click(
-        screen.getByRole("button", { name: "Add to Cart" })
+        screen.getByRole("button", { name: "Move to Cart" })
     );
     await user.click(
         screen.getByRole("button", { name: "Proceed" })
@@ -858,33 +878,33 @@ describe("WishlistProducts", () => {
     });
   });
 
-  it("changes Add to Cart button to Move to Cart after successful add", async () => {
+  it("changes Move to Cart button to View Cart after successful add", async () => {
     const user = userEvent.setup();
 
     mockedAddToCart.mockResolvedValue(undefined);
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: async () => ({
+      ok: true,
+      json: async () => ({
         data: {
-            books: [
+          books: [
             {
-                _id: "1",
-                author: "Author",
-                name: "Book",
-                description: "",
-                price: 100,
-                coverImage: "",
-                rentalPricePerDay: 10,
-                rentalPricePerWeek: 50,
-                rentalPricePerMonth: 150,
+              _id: "1",
+              author: "Author",
+              name: "Book",
+              description: "",
+              price: 100,
+              coverImage: "",
+              rentalPricePerDay: 10,
+              rentalPricePerWeek: 50,
+              rentalPricePerMonth: 150,
             },
-            ],
-            meta: {
+          ],
+          meta: {
             totalPages: 1,
-            },
+          },
         },
-        }),
+      }),
     });
 
     renderComponent();
@@ -892,24 +912,119 @@ describe("WishlistProducts", () => {
     await screen.findByText("Book");
 
     await user.click(
-        screen.getByRole("button", {
-        name: "Add to Cart",
-        })
+      screen.getByRole("button", {
+        name: "Move to Cart",
+      })
     );
 
     await user.click(
-        screen.getByRole("button", {
+      screen.getByRole("button", {
         name: "Proceed",
-        })
+      })
     );
 
     await waitFor(() => {
-        expect(
-        screen.getByRole("button", {
-            name: "Move to Cart",
-        })
-        ).toBeInTheDocument();
+      expect(mockedAddToCart).toHaveBeenCalledWith({
+        bookId: "1",
+        quantity: 1,
+        rentalPeriod: "day",
+      });
     });
+
+    expect(
+      await screen.findByRole("button", {
+        name: "View Cart",
+      })
+    ).toBeInTheDocument();
   });
 
+  it("shows View Cart when book already exists in HOST_CART", async () => {
+    window.HOST_CART = ["1"];
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          books: [
+            {
+              _id: "1",
+              author: "Author",
+              name: "Book",
+              description: "",
+              price: 100,
+              coverImage: "",
+              rentalPricePerDay: 10,
+              rentalPricePerWeek: 50,
+              rentalPricePerMonth: 150,
+            },
+          ],
+          meta: {
+            totalPages: 1,
+          },
+        },
+      }),
+    });
+
+    renderComponent();
+
+    await screen.findByText("Book");
+
+    expect(
+      screen.getByRole("button", {
+        name: "View Cart",
+      })
+    ).toBeInTheDocument();
+  });
+
+  it("updates button when cart-state-changed event is dispatched", async () => {
+    window.HOST_CART = [];
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          books: [
+            {
+              _id: "1",
+              author: "Author",
+              name: "Book",
+              description: "",
+              price: 100,
+              coverImage: "",
+              rentalPricePerDay: 10,
+              rentalPricePerWeek: 50,
+              rentalPricePerMonth: 150,
+            },
+          ],
+          meta: {
+            totalPages: 1,
+          },
+        },
+      }),
+    });
+
+    renderComponent();
+
+    await screen.findByText("Book");
+
+    expect(
+      screen.getByRole("button", {
+        name: "Move to Cart",
+      })
+    ).toBeInTheDocument();
+
+    window.dispatchEvent(
+      new CustomEvent("cart-state-changed", {
+        detail: ["1"],
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", {
+          name: "View Cart",
+        })
+      ).toBeInTheDocument();
+    });
+  });
 });
